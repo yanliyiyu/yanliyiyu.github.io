@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResumeAI - AI求职助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+              950: '#1e1b4b',
+            },
+            accent: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { scroll-behavior: smooth; }
+    body { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdfa 100%); min-height: 100vh; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #6366f1 0%, #14b8a6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .gradient-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      transition: all 0.3s ease;
+    }
+    .gradient-btn:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      70% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+    .score-circle {
+      transition: stroke-dashoffset 1.5s ease-in-out;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tab-active {
+      border-bottom: 2px solid #6366f1;
+      color: #4f46e5;
+    }
+    textarea { field-sizing: content; min-height: 120px; }
+    .landing-enter { animation: landingEnter 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    @keyframes landingEnter {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.96); pointer-events: none; }
+    }
+    .app-reveal { animation: appReveal 0.5s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes appReveal {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased">
+
+  <!-- ==================== LANDING PAGE ==================== -->
+  <div id="landingPage" class="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
+    <!-- Decorative background elements -->
+    <div class="absolute inset-0 -z-10">
+      <div class="absolute top-20 left-10 w-72 h-72 bg-primary-200/40 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-20 right-10 w-96 h-96 bg-accent-200/30 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-100/20 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Floating particles -->
+    <div class="absolute inset-0 -z-10 overflow-hidden">
+      <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-primary-400/30 rounded-full animate-pulse" style="animation-duration: 3s;"></div>
+      <div class="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-accent-400/40 rounded-full animate-pulse" style="animation-duration: 4s;"></div>
+      <div class="absolute bottom-1/3 left-1/2 w-2 h-2 bg-primary-300/30 rounded-full animate-pulse" style="animation-duration: 5s;"></div>
+      <div class="absolute top-1/2 right-1/4 w-1 h-1 bg-accent-300/40 rounded-full animate-pulse" style="animation-duration: 3.5s;"></div>
+      <div class="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-primary-400/25 rounded-full animate-pulse" style="animation-duration: 4.5s;"></div>
+    </div>
+
+    <!-- Logo -->
+    <div class="mb-8 flex items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl gradient-btn flex items-center justify-center shadow-lg shadow-primary-500/30">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight">
+        <span class="gradient-text">ResumeAI</span>
+      </h1>
+    </div>
+
+    <!-- Hero Text -->
+    <div class="text-center max-w-2xl mb-10">
+      <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight">
+        <span class="gradient-text">让AI帮你</span><br>
+        <span class="text-slate-900">找到理想工作</span>
+      </h2>
+      <p class="text-lg sm:text-xl text-slate-500 leading-relaxed">
+        智能解析简历、精准匹配岗位JD、生成专业优化建议——<br class="hidden sm:block">
+        三步提升简历初筛通过率，让HR一眼看到你
+      </p>
+    </div>
+
+    <!-- CTA Button -->
+    <button onclick="enterApp()" class="gradient-btn text-white px-10 py-4 rounded-2xl text-lg font-semibold cursor-pointer shadow-xl shadow-primary-500/25 hover:shadow-2xl hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all duration-300 mb-12">
+      立即开始
+      <svg class="inline w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+      </svg>
+    </button>
+
+    <!-- Feature Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full">
+      <div class="glass-card rounded-2xl p-5 text-center">
+        <div class="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <h3 class="text-sm font-bold text-slate-800 mb-1">简历解析</h3>
+        <p class="text-xs text-slate-500">自动提取教育、技能、经历等关键信息</p>
+      </div>
+      <div class="glass-card rounded-2xl p-5 text-center">
+        <div class="w-10 h-10 rounded-xl bg-accent-100 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <h3 class="text-sm font-bold text-slate-800 mb-1">岗位匹配</h3>
+        <p class="text-xs text-slate-500">四维度评估匹配度，可视化展示优劣势</p>
+      </div>
+      <div class="glass-card rounded-2xl p-5 text-center">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </div>
+        <h3 class="text-sm font-bold text-slate-800 mb-1">智能优化</h3>
+        <p class="text-xs text-slate-500">STAR法则改写，量化成果，关键词对齐</p>
+      </div>
+    </div>
+
+    <!-- Footer on landing -->
+    <p class="mt-16 text-xs text-slate-400">ResumeAI - AI求职助手</p>
+  </div>
+
+  <!-- ==================== MAIN APP (hidden initially) ==================== -->
+  <div id="mainApp" class="hidden">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass-card border-b border-slate-200/60">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl gradient-btn flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <h1 class="text-xl font-bold tracking-tight">
+            <span class="gradient-text">ResumeAI</span>
+            <span class="text-slate-500 text-sm font-normal ml-2">AI求职助手</span>
+          </h1>
+        </div>
+        <nav class="hidden sm:flex items-center gap-1 text-sm">
+          <a href="#upload" class="px-4 py-2 rounded-lg text-slate-600 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 cursor-pointer">简历解析</a>
+          <a href="#matching" class="px-4 py-2 rounded-lg text-slate-600 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 cursor-pointer">岗位匹配</a>
+          <a href="#optimize" class="px-4 py-2 rounded-lg text-slate-600 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 cursor-pointer">简历优化</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+
+      <!-- Hero -->
+      <section class="text-center mb-12 fade-in">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-50 border border-primary-200 text-primary-700 text-sm font-medium mb-6">
+          <span class="w-2 h-2 rounded-full bg-accent-400 pulse-ring"></span>
+          三步搞定求职：解析 · 匹配 · 优化
+        </div>
+        <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+          <span class="gradient-text">智能简历分析与岗位匹配</span>
+        </h2>
+        <p class="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+          上传简历，输入目标岗位JD，AI帮你解析简历、评估匹配度、生成专业优化建议，大幅提升简历初筛通过率。
+        </p>
+      </section>
+
+      <!-- Step 1: Resume Upload & Parse -->
+      <section id="upload" class="mb-8 fade-in">
+        <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+              <span class="text-primary-700 font-bold text-sm">1</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-slate-900">简历上传与解析</h3>
+              <p class="text-sm text-slate-500">粘贴简历文本或上传文件，AI自动提取结构化信息</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Input -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">简历内容</label>
+              <textarea id="resumeInput" rows="12"
+                class="w-full rounded-xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-200 resize-y"
+                placeholder="请在此粘贴您的简历文本...&#10;&#10;例如：&#10;教育背景：XX大学 计算机科学 本科 2020-2024&#10;技能：Python, Java, React, SQL&#10;实习经历：XX科技公司 前端开发实习生 2023.06-2023.09&#10;项目经历：电商平台开发..."></textarea>
+              <div class="flex items-center gap-3 mt-3">
+                <label id="fileUploadLabel" class="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-slate-300 hover:border-primary-400 hover:bg-primary-50/50 transition-all duration-200 text-sm text-slate-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                  上传PDF/Word/TXT
+                  <input type="file" id="fileInput" accept=".pdf,.docx,.txt" class="hidden" onchange="handleFileUpload(event)">
+                </label>
+                <button onclick="parseResume()" class="gradient-btn text-white px-5 py-2 rounded-lg text-sm font-semibold cursor-pointer">
+                  开始解析
+                </button>
+              </div>
+            </div>
+
+            <!-- Parsed Result -->
+            <div id="parsedResult" class="hidden">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">解析结果</label>
+              <div class="rounded-xl border border-slate-200 bg-white/70 p-4 space-y-3 max-h-[400px] overflow-y-auto">
+                <div id="educationSection" class="hidden">
+                  <h4 class="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">教育背景</h4>
+                  <div id="educationContent" class="text-sm text-slate-700"></div>
+                </div>
+                <div id="skillsSection" class="hidden">
+                  <h4 class="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">技能标签</h4>
+                  <div id="skillsContent" class="flex flex-wrap gap-1.5"></div>
+                </div>
+                <div id="internshipsSection" class="hidden">
+                  <h4 class="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">实习经历</h4>
+                  <div id="internshipsContent" class="text-sm text-slate-700"></div>
+                </div>
+                <div id="projectsSection" class="hidden">
+                  <h4 class="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">项目经历</h4>
+                  <div id="projectsContent" class="text-sm text-slate-700"></div>
+                </div>
+                <div id="awardsSection" class="hidden">
+                  <h4 class="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">荣誉奖项</h4>
+                  <div id="awardsContent" class="text-sm text-slate-700"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Job Matching -->
+      <section id="matching" class="mb-8 fade-in">
+        <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-accent-100 flex items-center justify-center">
+              <span class="text-accent-700 font-bold text-sm">2</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-slate-900">岗位匹配度评估</h3>
+              <p class="text-sm text-slate-500">输入目标岗位JD，AI评估简历与岗位的匹配程度</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- JD Input -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">目标岗位JD</label>
+              <textarea id="jdInput" rows="10"
+                class="w-full rounded-xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:border-transparent transition-all duration-200 resize-y"
+                placeholder="请在此粘贴目标岗位的职位描述(JD)...&#10;&#10;例如：&#10;岗位：前端开发工程师&#10;要求：计算机相关专业本科以上，熟悉React/Vue，有2年以上前端开发经验，熟悉Webpack/Vite等构建工具..."></textarea>
+              <div class="flex items-center gap-3 mt-3">
+                <input id="jobTitle" type="text"
+                  class="flex-1 rounded-lg border border-slate-200 bg-white/70 px-4 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:border-transparent transition-all duration-200"
+                  placeholder="岗位名称（可选）">
+                <input id="jobCity" type="text"
+                  class="w-28 rounded-lg border border-slate-200 bg-white/70 px-4 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:border-transparent transition-all duration-200"
+                  placeholder="城市（可选）">
+                <button onclick="evaluateMatch()" class="bg-accent-500 hover:bg-accent-600 text-white px-5 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-300 hover:shadow-lg">
+                  评估匹配度
+                </button>
+              </div>
+            </div>
+
+            <!-- Match Result -->
+            <div id="matchResult" class="hidden">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">匹配结果</label>
+              <div class="rounded-xl border border-slate-200 bg-white/70 p-5">
+                <!-- Score Circle -->
+                <div class="flex items-center justify-center mb-4">
+                  <div class="relative w-32 h-32">
+                    <svg class="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+                      <circle id="scoreArc" cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGradient)" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" class="score-circle"/>
+                      <defs>
+                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" style="stop-color:#6366f1"/>
+                          <stop offset="100%" style="stop-color:#14b8a6"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                      <span id="scoreValue" class="text-3xl font-extrabold gradient-text">0</span>
+                      <span class="text-xs text-slate-400">匹配度</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dimension Scores -->
+                <div class="space-y-3 mb-4">
+                  <div>
+                    <div class="flex justify-between text-xs text-slate-600 mb-1"><span>专业 & 学历</span><span id="dimEdu">0%</span></div>
+                    <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div id="dimEduBar" class="h-full rounded-full bg-primary-400 transition-all duration-1000" style="width:0%"></div></div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-slate-600 mb-1"><span>技能匹配</span><span id="dimSkill">0%</span></div>
+                    <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div id="dimSkillBar" class="h-full rounded-full bg-accent-400 transition-all duration-1000" style="width:0%"></div></div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-slate-600 mb-1"><span>实习/项目</span><span id="dimExp">0%</span></div>
+                    <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div id="dimExpBar" class="h-full rounded-full bg-primary-400 transition-all duration-1000" style="width:0%"></div></div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-slate-600 mb-1"><span>意向符合度</span><span id="dimIntent">0%</span></div>
+                    <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div id="dimIntentBar" class="h-full rounded-full bg-accent-400 transition-all duration-1000" style="width:0%"></div></div>
+                  </div>
+                </div>
+
+                <!-- Strengths & Weaknesses -->
+                <div class="space-y-3">
+                  <div id="strengthsSection" class="hidden">
+                    <h4 class="text-xs font-bold text-accent-600 uppercase tracking-wider mb-1">优势</h4>
+                    <ul id="strengthsList" class="text-sm text-slate-700 space-y-1"></ul>
+                  </div>
+                  <div id="weaknessesSection" class="hidden">
+                    <h4 class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">不足 / 缺失关键词</h4>
+                    <ul id="weaknessesList" class="text-sm text-slate-700 space-y-1"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Resume Optimization -->
+      <section id="optimize" class="mb-8 fade-in">
+        <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+              <span class="text-amber-700 font-bold text-sm">3</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-slate-900">简历优化建议</h3>
+              <p class="text-sm text-slate-500">基于JD要求，提供STAR法则优化建议，提升简历竞争力</p>
+            </div>
+          </div>
+
+          <div id="optimizePlaceholder" class="text-center py-12 text-slate-400">
+            <svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            <p class="text-sm">请先完成简历解析和岗位匹配，系统将自动生成优化建议</p>
+          </div>
+
+          <div id="optimizeResult" class="hidden space-y-4">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-xs font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">STAR法则优化</span>
+              <span class="text-xs font-semibold text-accent-600 bg-accent-50 px-3 py-1 rounded-full">量化成果</span>
+              <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">关键词对齐</span>
+            </div>
+            <div id="optimizeCards" class="space-y-4"></div>
+          </div>
+
+          <div class="flex justify-center mt-6">
+            <button id="optimizeBtn" onclick="generateOptimization()" class="gradient-btn text-white px-6 py-2.5 rounded-lg text-sm font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+              生成优化建议
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 text-sm text-slate-400">
+      <p>ResumeAI - 智能求职助手 | 三步搞定：简历解析 · 岗位匹配 · 优化建议</p>
+    </footer>
+
+  </div><!-- end mainApp -->
+
+  <script>
+    // ============ Landing Page Transition ============
+    function enterApp() {
+      const landing = document.getElementById('landingPage');
+      const mainApp = document.getElementById('mainApp');
+
+      // Animate landing page out
+      landing.classList.add('landing-enter');
+
+      // After animation, hide landing and show main app
+      setTimeout(() => {
+        landing.style.display = 'none';
+        mainApp.classList.remove('hidden');
+        mainApp.classList.add('app-reveal');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }, 500);
+    }
+
+    // ============ PDF.js Config ============
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // ============ State ============
+    let parsedData = null;
+    let matchResult = null;
+
+    // ============ File Upload ============
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const ext = file.name.split('.').pop().toLowerCase();
+      const textarea = document.getElementById('resumeInput');
+      const uploadLabel = document.getElementById('fileUploadLabel');
+      const originalLabelHtml = uploadLabel ? uploadLabel.innerHTML : '';
+
+      // Show loading state
+      if (uploadLabel) {
+        uploadLabel.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> 解析中...`;
+        uploadLabel.classList.add('pointer-events-none', 'opacity-60');
+      }
+
+      try {
+        let text = '';
+
+        if (ext === 'pdf') {
+          text = await extractPdfText(file);
+        } else if (ext === 'docx') {
+          text = await extractDocxText(file);
+        } else if (ext === 'doc') {
+          // .doc (binary) is not supported by mammoth.js
+          showToast('.doc 为旧版格式，暂不支持。请另存为 .docx 格式后重试，或直接粘贴文本。', 'warning');
+          event.target.value = '';
+          return;
+        } else {
+          // .txt or other text files
+          text = await readTextFile(file);
+        }
+
+        if (text.trim()) {
+          textarea.value = text;
+          showToast(`已从 ${file.name} 解析出文本内容`, 'success');
+        } else {
+          showToast('文件解析结果为空，请检查文件内容或直接粘贴文本', 'warning');
+        }
+      } catch (err) {
+        console.error('File parse error:', err);
+        showToast('文件解析失败：' + (err.message || '未知错误，请直接粘贴文本'), 'warning');
+      } finally {
+        // Restore upload label
+        if (uploadLabel) {
+          uploadLabel.innerHTML = originalLabelHtml;
+          uploadLabel.classList.remove('pointer-events-none', 'opacity-60');
+        }
+        event.target.value = '';
+      }
+    }
+
+    async function extractPdfText(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+
+        // Smart text reconstruction: handle Chinese character spacing
+        const items = content.items;
+        let pageText = '';
+        let lastX = -1, lastY = -1, lastWidth = 0;
+
+        for (const item of items) {
+          if (!item.str) continue;
+
+          const tx = item.transform;
+          const x = tx[4], y = tx[5];
+          const isChinese = /[\u4e00-\u9fff]/.test(item.str);
+          const charWidth = item.width || 0;
+
+          if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+            // New line
+            pageText += '\n';
+          } else if (lastX !== -1 && x - (lastX + lastWidth) > (isChinese ? 12 : 5)) {
+            // Large gap = likely a new column/section
+            pageText += '  ';
+          } else if (lastX !== -1 && x - (lastX + lastWidth) > 2 && !isChinese) {
+            // Small gap between English words
+            pageText += ' ';
+          }
+
+          pageText += item.str;
+          lastX = x;
+          lastY = y;
+          lastWidth = charWidth;
+        }
+
+        fullText += pageText.trim() + '\n';
+      }
+
+      return fullText.trim();
+    }
+
+    async function extractDocxText(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+
+    function readTextFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          resolve(e.target.result);
+        };
+        reader.onerror = function() {
+          reject(new Error('文件读取失败'));
+        };
+        reader.readAsText(file, 'UTF-8');
+      });
+    }
+
+    // ============ Step 1: Resume Parsing ============
+    function parseResume() {
+      const resumeText = document.getElementById('resumeInput').value.trim();
+      if (!resumeText) {
+        showToast('请先输入或上传简历内容', 'warning');
+        return;
+      }
+
+      // Simulate AI parsing with intelligent regex extraction
+      parsedData = extractResumeInfo(resumeText);
+      displayParsedResult(parsedData);
+
+      document.getElementById('parsedResult').classList.remove('hidden');
+      document.getElementById('parsedResult').classList.add('fade-in');
+
+      // Enable optimize button if JD is also filled
+      checkOptimizeReady();
+
+      showToast('简历解析完成', 'success');
+    }
+
+    function extractResumeInfo(text) {
+      const result = {
+        education: [],
+        skills: [],
+        internships: [],
+        projects: [],
+        awards: []
+      };
+
+      // Extract education
+      const eduPatterns = [
+        /(\S+大学|\S+学院|\S+University|\S+College)\s*(?:[，,]\s*)?(\S+专业|\S+系)?\s*(?:[，,]\s*)?(本科|硕士|博士|大专|学士|研究生)?\s*(?:[，,]\s*)?(\d{4}[年.-]?\d{1,2}[月]?\s*[-–—至到]\s*\d{4}[年.-]?\d{1,2}[月]?|\d{4}\s*[-–—至到]\s*\d{4})?/g,
+      ];
+
+      let match;
+      while ((match = eduPatterns[0].exec(text)) !== null) {
+        result.education.push({
+          school: match[1] || '',
+          major: match[2] || '',
+          degree: match[3] || '',
+          time: match[4] || ''
+        });
+      }
+
+      // Extract skills
+      const skillKeywords = [
+        'Python', 'Java', 'JavaScript', 'TypeScript', 'Go', 'Rust', 'C\\+\\+', 'C#', 'Ruby', 'PHP', 'Swift', 'Kotlin',
+        'React', 'Vue', 'Angular', 'Node\\.js', 'Django', 'Spring', 'Flask', 'Express',
+        'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP',
+        '机器学习', '深度学习', '自然语言处理', '计算机视觉', '数据分析', '数据挖掘',
+        'Git', 'Linux', 'HTML', 'CSS', 'RESTful', 'GraphQL', 'Webpack', 'Vite',
+        'Figma', 'Photoshop', 'Sketch', 'Adobe', 'PRD', 'Axure',
+        '英语', '日语', '韩语', '沟通能力', '团队协作', '项目管理'
+      ];
+
+      skillKeywords.forEach(skill => {
+        const regex = new RegExp(`(?:^|[，,、\\s;；])(${skill})(?:$|[，,、\\s;；])`, 'gi');
+        if (regex.test(text) && !result.skills.includes(skill.replace(/\\\\/g, ''))) {
+          result.skills.push(skill.replace(/\\\\/g, ''));
+        }
+      });
+
+      // Extract internships
+      const internPattern = /(\S+公司|\S+集团|\S+科技|\S+网络|\S+银行|\S+保险|\S+证券|\S+医院|\S+事务所)\s*(?:[，,]\s*)?(\S+实习生|\S+实习|\S+助理|\S+工程师)?\s*(?:[，,]\s*)?(\d{4}[年.-]?\d{1,2}[月]?\s*[-–—至到]\s*\d{4}[年.-]?\d{1,2}[月]?|\d{4}\s*[-–—至到]\s*\d{4})?/g;
+      while ((match = internPattern.exec(text)) !== null) {
+        if (!match[1].includes('大学') && !match[1].includes('学院')) {
+          result.internships.push({
+            company: match[1] || '',
+            role: match[2] || '',
+            time: match[3] || '',
+            description: ''
+          });
+        }
+      }
+
+      // Extract projects
+      const projectPattern = /(?:项目[：:]\s*|项目经历[：:]\s*)(\S+)/g;
+      while ((match = projectPattern.exec(text)) !== null) {
+        result.projects.push({
+          name: match[1] || '',
+          role: '',
+          tech: '',
+          result: ''
+        });
+      }
+
+      // Extract awards
+      const awardPattern = /(?:获奖|奖项|荣誉|奖学金)[：:]\s*(\S+)/g;
+      while ((match = awardPattern.exec(text)) !== null) {
+        result.awards.push(match[1]);
+      }
+
+      return result;
+    }
+
+    function displayParsedResult(data) {
+      // Education
+      const eduSection = document.getElementById('educationSection');
+      const eduContent = document.getElementById('educationContent');
+      if (data.education.length > 0) {
+        eduSection.classList.remove('hidden');
+        eduContent.innerHTML = data.education.map(e =>
+          `<div class="py-1.5 px-3 bg-primary-50/50 rounded-lg mb-1">
+            <span class="font-medium">${e.school}</span>
+            ${e.major ? `<span class="text-slate-500"> · ${e.major}</span>` : ''}
+            ${e.degree ? `<span class="text-slate-500"> · ${e.degree}</span>` : ''}
+            ${e.time ? `<div class="text-xs text-slate-400 mt-0.5">${e.time}</div>` : ''}
+          </div>`
+        ).join('');
+      } else {
+        eduSection.classList.add('hidden');
+      }
+
+      // Skills
+      const skillsSection = document.getElementById('skillsSection');
+      const skillsContent = document.getElementById('skillsContent');
+      if (data.skills.length > 0) {
+        skillsSection.classList.remove('hidden');
+        skillsContent.innerHTML = data.skills.map(s =>
+          `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700 border border-primary-200">${s}</span>`
+        ).join('');
+      } else {
+        skillsSection.classList.add('hidden');
+      }
+
+      // Internships
+      const internSection = document.getElementById('internshipsSection');
+      const internContent = document.getElementById('internshipsContent');
+      if (data.internships.length > 0) {
+        internSection.classList.remove('hidden');
+        internContent.innerHTML = data.internships.map(i =>
+          `<div class="py-1.5 px-3 bg-accent-50/50 rounded-lg mb-1">
+            <span class="font-medium">${i.company}</span>
+            ${i.role ? `<span class="text-slate-500"> · ${i.role}</span>` : ''}
+            ${i.time ? `<div class="text-xs text-slate-400 mt-0.5">${i.time}</div>` : ''}
+          </div>`
+        ).join('');
+      } else {
+        internSection.classList.add('hidden');
+      }
+
+      // Projects
+      const projSection = document.getElementById('projectsSection');
+      const projContent = document.getElementById('projectsContent');
+      if (data.projects.length > 0) {
+        projSection.classList.remove('hidden');
+        projContent.innerHTML = data.projects.map(p =>
+          `<div class="py-1.5 px-3 bg-amber-50/50 rounded-lg mb-1">
+            <span class="font-medium">${p.name}</span>
+          </div>`
+        ).join('');
+      } else {
+        projSection.classList.add('hidden');
+      }
+
+      // Awards
+      const awardsSection = document.getElementById('awardsSection');
+      const awardsContent = document.getElementById('awardsContent');
+      if (data.awards.length > 0) {
+        awardsSection.classList.remove('hidden');
+        awardsContent.innerHTML = data.awards.map(a =>
+          `<div class="py-1.5 px-3 bg-slate-50 rounded-lg mb-1 text-sm">${a}</div>`
+        ).join('');
+      } else {
+        awardsSection.classList.add('hidden');
+      }
+    }
+
+    // ============ Step 2: Job Matching ============
+    function evaluateMatch() {
+      const jdText = document.getElementById('jdInput').value.trim();
+      if (!jdText) {
+        showToast('请先输入目标岗位JD', 'warning');
+        return;
+      }
+      if (!parsedData) {
+        showToast('请先完成简历解析', 'warning');
+        return;
+      }
+
+      matchResult = calculateMatch(parsedData, jdText);
+      displayMatchResult(matchResult);
+
+      document.getElementById('matchResult').classList.remove('hidden');
+      document.getElementById('matchResult').classList.add('fade-in');
+
+      checkOptimizeReady();
+
+      showToast(`匹配度评估完成：${matchResult.totalScore}分`, 'success');
+    }
+
+    function calculateMatch(parsed, jdText) {
+      const jdLower = jdText.toLowerCase();
+
+      // Extract JD skills
+      const allSkills = ['Python', 'Java', 'JavaScript', 'TypeScript', 'Go', 'Rust', 'C++', 'React', 'Vue', 'Angular',
+        'Node.js', 'Django', 'Spring', 'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Docker', 'Kubernetes',
+        'AWS', 'Azure', 'GCP', 'Git', 'Linux', 'HTML', 'CSS', 'RESTful', 'GraphQL', 'Webpack', 'Vite',
+        '机器学习', '深度学习', '数据分析', 'Figma', '英语', '项目管理'];
+      const jdSkills = allSkills.filter(s => jdLower.includes(s.toLowerCase()));
+      const matchedSkills = parsed.skills.filter(s => jdSkills.includes(s));
+
+      // 1. Education & Degree (30%)
+      let eduScore = 0;
+      const jdHasDegree = /本科|硕士|博士|学士|研究生|bachelor|master|phd/i.test(jdLower);
+      const hasEducation = parsed.education.length > 0;
+      const eduMatches = parsed.education.some(e => {
+        const eduStr = `${e.school}${e.major}${e.degree}`.toLowerCase();
+        return jdLower.split(/\s+/).some(word => word.length > 2 && eduStr.includes(word.toLowerCase()));
+      });
+      if (jdHasDegree && hasEducation) eduScore = eduMatches ? 28 : 18;
+      else if (hasEducation) eduScore = 20;
+      else eduScore = 5;
+
+      // 2. Skills Match (40%)
+      let skillScore = 0;
+      if (jdSkills.length > 0) {
+        skillScore = Math.round((matchedSkills.length / jdSkills.length) * 40);
+      } else {
+        skillScore = parsed.skills.length > 3 ? 25 : 10;
+      }
+
+      // 3. Internship/Projects (20%)
+      let expScore = 0;
+      const hasInternship = parsed.internships.length > 0;
+      const hasProject = parsed.projects.length > 0;
+      const jdWantsExp = /经验|实习|工作|年限|年以|experience/i.test(jdLower);
+      if (hasInternship && hasProject) expScore = 18;
+      else if (hasInternship) expScore = 14;
+      else if (hasProject) expScore = 10;
+      else expScore = jdWantsExp ? 2 : 8;
+
+      // 4. Intent Match (10%)
+      const jobTitle = document.getElementById('jobTitle').value.trim();
+      const jobCity = document.getElementById('jobCity').value.trim();
+      let intentScore = 5;
+      if (jobTitle) intentScore += 3;
+      if (jobCity) intentScore += 2;
+
+      const totalScore = Math.min(eduScore + skillScore + expScore + intentScore, 100);
+
+      // Generate strengths and weaknesses
+      const strengths = [];
+      const weaknesses = [];
+
+      if (matchedSkills.length >= 3) {
+        strengths.push(`技能匹配度高：匹配到 ${matchedSkills.join('、')} 等${matchedSkills.length}项JD要求技能`);
+      }
+      if (hasInternship) {
+        strengths.push('有相关实习经历，具备实践能力');
+      }
+      if (hasProject) {
+        strengths.push('有项目经验，能展示技术应用能力');
+      }
+      if (parsed.awards.length > 0) {
+        strengths.push(`获得过${parsed.awards.length}项荣誉/奖项`);
+      }
+      if (parsed.education.length > 0) {
+        strengths.push(`教育背景：${parsed.education.map(e => e.school).join('、')}`);
+      }
+
+      const missingSkills = jdSkills.filter(s => !matchedSkills.includes(s));
+      if (missingSkills.length > 0) {
+        weaknesses.push(`缺失JD关键技能：${missingSkills.slice(0, 5).join('、')}${missingSkills.length > 5 ? '等' : ''}`);
+      }
+      if (!hasInternship && jdWantsExp) {
+        weaknesses.push('缺少实习经历，建议补充相关实践');
+      }
+      if (parsed.education.length === 0) {
+        weaknesses.push('未检测到教育背景信息');
+      }
+      if (parsed.skills.length < 5) {
+        weaknesses.push('技能标签较少，建议补充更多相关技能');
+      }
+      if (strengths.length === 0) {
+        strengths.push('请完善简历信息以获得更准确的匹配评估');
+      }
+
+      return {
+        totalScore,
+        dimensions: {
+          education: { score: eduScore, max: 30, percent: Math.round((eduScore / 30) * 100) },
+          skill: { score: skillScore, max: 40, percent: Math.round((skillScore / 40) * 100) },
+          experience: { score: expScore, max: 20, percent: Math.round((expScore / 20) * 100) },
+          intent: { score: intentScore, max: 10, percent: Math.round((intentScore / 10) * 100) }
+        },
+        strengths,
+        weaknesses
+      };
+    }
+
+    function displayMatchResult(result) {
+      // Score circle animation
+      const scoreArc = document.getElementById('scoreArc');
+      const circumference = 326.7;
+      const offset = circumference - (result.totalScore / 100) * circumference;
+      setTimeout(() => {
+        scoreArc.style.strokeDashoffset = offset;
+      }, 100);
+
+      // Animate score value
+      animateValue('scoreValue', 0, result.totalScore, 1500);
+
+      // Dimension bars
+      setTimeout(() => {
+        document.getElementById('dimEduBar').style.width = result.dimensions.education.percent + '%';
+        document.getElementById('dimEdu').textContent = result.dimensions.education.percent + '%';
+        document.getElementById('dimSkillBar').style.width = result.dimensions.skill.percent + '%';
+        document.getElementById('dimSkill').textContent = result.dimensions.skill.percent + '%';
+        document.getElementById('dimExpBar').style.width = result.dimensions.experience.percent + '%';
+        document.getElementById('dimExp').textContent = result.dimensions.experience.percent + '%';
+        document.getElementById('dimIntentBar').style.width = result.dimensions.intent.percent + '%';
+        document.getElementById('dimIntent').textContent = result.dimensions.intent.percent + '%';
+      }, 200);
+
+      // Strengths
+      const strengthsSection = document.getElementById('strengthsSection');
+      const strengthsList = document.getElementById('strengthsList');
+      if (result.strengths.length > 0) {
+        strengthsSection.classList.remove('hidden');
+        strengthsList.innerHTML = result.strengths.map(s =>
+          `<li class="flex items-start gap-2">
+            <span class="text-accent-500 mt-0.5">✓</span>
+            <span>${s}</span>
+          </li>`
+        ).join('');
+      }
+
+      // Weaknesses
+      const weaknessesSection = document.getElementById('weaknessesSection');
+      const weaknessesList = document.getElementById('weaknessesList');
+      if (result.weaknesses.length > 0) {
+        weaknessesSection.classList.remove('hidden');
+        weaknessesList.innerHTML = result.weaknesses.map(w =>
+          `<li class="flex items-start gap-2">
+            <span class="text-amber-500 mt-0.5">!</span>
+            <span>${w}</span>
+          </li>`
+        ).join('');
+      }
+    }
+
+    function animateValue(elementId, start, end, duration) {
+      const element = document.getElementById(elementId);
+      const startTime = performance.now();
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        element.textContent = Math.round(start + (end - start) * eased);
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    // ============ Step 3: Optimization ============
+    function checkOptimizeReady() {
+      const btn = document.getElementById('optimizeBtn');
+      if (parsedData && matchResult) {
+        btn.disabled = false;
+      }
+    }
+
+    function generateOptimization() {
+      if (!parsedData || !matchResult) {
+        showToast('请先完成简历解析和岗位匹配', 'warning');
+        return;
+      }
+
+      const jdText = document.getElementById('jdInput').value.trim();
+      const resumeText = document.getElementById('resumeInput').value.trim();
+      const optimizations = generateOptimizationSuggestions(parsedData, matchResult, jdText, resumeText);
+
+      displayOptimizations(optimizations);
+      document.getElementById('optimizePlaceholder').classList.add('hidden');
+      document.getElementById('optimizeResult').classList.remove('hidden');
+      document.getElementById('optimizeResult').classList.add('fade-in');
+
+      showToast('优化建议已生成', 'success');
+    }
+
+    function generateOptimizationSuggestions(parsed, match, jdText, resumeText) {
+      const suggestions = [];
+      const jdLower = jdText.toLowerCase();
+
+      // ── Extract key info from JD for contextual suggestions ──
+      const jdHasKeywords = extractJdContext(jdText);
+
+      // ── 1. Internship STAR rewrite (contextual, no placeholder) ──
+      if (parsed.internships.length > 0) {
+        parsed.internships.forEach((intern) => {
+          const roleText = intern.role || getRoleFromJd(jdText) || '实习生';
+          const techStack = pickRelevantSkills(parsed.skills, jdHasKeywords.skills, 3);
+          const bizModule = jdHasKeywords.bizModule || '核心业务模块';
+          const metric = jdHasKeywords.metric || '用户活跃度';
+
+          suggestions.push({
+            original: intern.company + (intern.role ? ' · ' + intern.role : '') + (intern.time ? ' · ' + intern.time : ''),
+            optimized: `${intern.company} · ${roleText} · ${intern.time || ''}
+• 负责${bizModule}相关功能的开发与迭代，使用 ${techStack} 实现${jdHasKeywords.feature || '核心功能模块'}，覆盖日均 ${jdHasKeywords.volume || '5000+'} 用户
+• 通过${jdHasKeywords.optimization || '代码重构与性能优化'}，将${metric}提升约30%，页面响应时间降低40%
+• 与${jdHasKeywords.teamSize || '5'}人跨职能团队协作，按时交付${jdHasKeywords.deliverable || '2个迭代版本'}，获得导师「优秀实习生」评价`,
+            note: `基于JD中「${jdHasKeywords.roleName || roleText}」岗位要求，使用STAR法则将笼统经历改写为有情境、有行动、有量化结果的描述。注意将你实际做过的事情填入，不要编造数据。`
+          });
+        });
+      }
+
+      // ── 2. Project rewrite with JD-aligned tech details ──
+      if (parsed.projects.length > 0) {
+        parsed.projects.forEach((proj) => {
+          const projTech = pickRelevantSkills(parsed.skills, jdHasKeywords.skills, 2);
+          const projType = jdHasKeywords.projectType || 'Web应用';
+          const projFeature1 = jdHasKeywords.feature || '用户管理模块';
+          const projFeature2 = jdHasKeywords.feature2 || '数据可视化面板';
+
+          suggestions.push({
+            original: proj.name,
+            optimized: `${proj.name}
+• 基于 ${projTech} 独立开发${projType}，实现${projFeature1}、${projFeature2}等核心功能
+• 采用${jdHasKeywords.optimization || '懒加载与缓存策略'}优化首屏加载，将FCP从2.8s降至1.2s，Lighthouse评分从62提升至91
+• 项目上线后累计服务${jdHasKeywords.volume || '3000+'}用户，获${jdHasKeywords.award || '课程优秀项目'}荣誉`,
+            note: `结合JD中「${projTech}」等技术要求和「${projType}」方向，用具体技术方案和性能数据代替模糊描述，让面试官一眼看出你的技术深度。`
+          });
+        });
+      }
+
+      // ── 3. Missing skills gap analysis ──
+      const missingSkills = match.weaknesses
+        .filter(w => w.includes('缺失JD关键技能'))
+        .flatMap(w => {
+          const m = w.match(/：(.+)/);
+          return m ? m[1].split('、') : [];
+        });
+
+      if (missingSkills.length > 0) {
+        const learnPaths = missingSkills.map(s => {
+          const paths = {
+            'React': 'React官方文档 + 实战项目（2周可上手）',
+            'Vue': 'Vue官方教程 + Vue Mastery课程（1-2周可上手）',
+            'TypeScript': 'TypeScript官方Handbook + 将现有JS项目迁移（1周可上手）',
+            'Node.js': 'Node.js官方指南 + Express实战（2周可上手）',
+            'Docker': 'Docker官方入门教程 + 本地部署练习（3-5天可上手）',
+            'Kubernetes': 'K8s官方教程 + Minikube本地实践（2-3周可上手）',
+            'AWS': 'AWS官方免费课程 + 免费层实操（2-3周可上手）',
+            'Spring': 'Spring官方Guides + 搭建REST API项目（2周可上手）',
+            'Django': 'Django官方教程 + 构建博客/管理后台（1-2周可上手）',
+            'MySQL': 'MySQL官方文档 + LeetCode SQL练习（1周可上手）',
+            'PostgreSQL': 'PG官方文档 + 实战项目迁移（1周可上手）',
+            'MongoDB': 'MongoDB University免费课程（1周可上手）',
+            'Redis': 'Redis官方教程 + 缓存实战（3-5天可上手）',
+            'Go': 'Go官方Tour + 写一个CLI工具（1-2周可上手）',
+            'Rust': 'Rust官方Book + Rustlings练习（3-4周可上手）',
+            'GraphQL': 'Apollo官方教程 + 改造REST API（1周可上手）',
+            'Webpack': 'Webpack官方文档 + 从零配置项目（3-5天可上手）',
+            'Vite': 'Vite官方文档 + 迁移CRA项目（1-2天可上手）',
+            '机器学习': '吴恩达Coursera课程 + Kaggle入门赛（4-6周可上手）',
+            '深度学习': 'fast.ai课程 + PyTorch官方教程（4-6周可上手）',
+            '数据分析': 'Pandas官方文档 + Kaggle数据分析项目（2周可上手）',
+          };
+          return paths[s] ? `  · ${s}：${paths[s]}` : `  · ${s}：通过官方文档+小型实战项目快速入门（1-2周）`;
+        }).join('\n');
+
+        suggestions.push({
+          original: `当前技能列表：${parsed.skills.join('、') || '未检测到明确技能'}`,
+          optimized: `【JD要求但简历缺失的技能】${missingSkills.join('、')}
+
+短期补救方案（投递前即可完成）：
+${learnPaths}
+
+投递策略：
+• 如已具备这些技能但未在简历中体现 → 立即在技能板块补充，并在项目经历中穿插使用场景
+• 如正在学习中 → 可标注「了解/学习中」，面试时诚实说明学习进度
+• 如完全不会 → 优先投递不要求该技能的岗位，同时开始学习`,
+          note: `该岗位JD明确要求${missingSkills.slice(0, 3).join('、')}等技能，这是ATS筛选的关键词。每补上一个缺失技能，匹配度可提升约${Math.min(15, Math.round(40 / (missingSkills.length || 1)))}分。`
+        });
+      }
+
+      // ── 4. Education gap ──
+      if (parsed.education.length === 0) {
+        suggestions.push({
+          original: '简历中未检测到教育背景',
+          optimized: `请在简历顶部添加教育背景板块，格式参考：
+XX大学 | 计算机科学与技术 | 本科 | 2020.09 - 2024.06
+GPA: 3.6/4.0（如GPA较高可标注）`,
+          note: '教育背景是HR筛选的第一关，缺少此项简历可能被直接过滤。即使是非相关专业，也请如实填写。'
+        });
+      }
+
+      // ── 5. Resume formatting & structure advice ──
+      const structureIssues = analyzeStructure(resumeText, jdText);
+      if (structureIssues.length > 0) {
+        suggestions.push({
+          original: structureIssues.map(i => `· ${i}`).join('\n'),
+          optimized: `建议简历结构调整为以下顺序：
+1. 个人信息（姓名、电话、邮箱、求职意向）
+2. 教育背景（学校、专业、学历、时间）
+3. 技能清单（按JD要求排序，突出匹配项）
+4. 实习/工作经历（STAR法则，倒序排列）
+5. 项目经历（突出技术栈和量化成果）
+6. 荣誉奖项（选填，有则列）
+整体控制在一页A4纸以内`,
+          note: 'HR平均浏览一份简历仅6-10秒，清晰的结构和关键信息前置能大幅提升被注意到的概率。'
+        });
+      }
+
+      // ── 6. Generic fallback with actionable advice ──
+      if (suggestions.length === 0) {
+        suggestions.push({
+          original: '当前简历整体结构良好',
+          optimized: `进一步提升建议：
+• 在简历开头增加「求职意向」一栏，明确目标岗位和城市，方便HR快速匹配
+• 将最匹配JD要求的一段经历放在实习/项目板块的第一位
+• 如有GitHub/技术博客/开源贡献，建议附上链接增加信任度
+• 简历文件名建议改为「姓名_岗位_学校.pdf」格式`,
+          note: '简历已经不错，以上是锦上添花的优化方向。建议针对不同岗位JD准备2-3个版本的简历。'
+        });
+      }
+
+      return suggestions;
+    }
+
+    // ── Helper: extract context from JD for specific suggestions ──
+    function extractJdContext(jdText) {
+      const ctx = { skills: [], bizModule: '', feature: '', feature2: '', metric: '', optimization: '', roleName: '', volume: '', teamSize: '', deliverable: '', projectType: '', award: '' };
+
+      // Extract role name
+      const roleMatch = jdText.match(/岗位[：:]\s*(\S+)|职位[：:]\s*(\S+)|(前端|后端|全栈|算法|数据|测试|运维|产品|设计|Android|iOS)\s*(开发)?\s*(工程师|实习生)/);
+      if (roleMatch) ctx.roleName = roleMatch[0].replace(/岗位[：:]|职位[：:]/g, '').trim();
+
+      // Extract skills mentioned in JD
+      const skillBank = ['React', 'Vue', 'Angular', 'TypeScript', 'JavaScript', 'Node.js', 'Python', 'Java', 'Go', 'Docker', 'Kubernetes', 'AWS', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Spring', 'Django', 'Flask', 'GraphQL', 'Webpack', 'Vite', 'Git', 'Linux', 'HTML', 'CSS', 'RESTful', '机器学习', '深度学习', '数据分析'];
+      ctx.skills = skillBank.filter(s => jdText.toLowerCase().includes(s.toLowerCase()));
+
+      // Extract business module / domain
+      const bizMatch = jdText.match(/负责\s*(\S{2,8})\s*(模块|系统|平台|业务|产品|功能)/);
+      if (bizMatch) ctx.bizModule = bizMatch[0].replace(/\s+/g, '');
+
+      // Extract feature mentions
+      const featMatches = jdText.match(/(?:实现|开发|设计|搭建)\s*(\S{2,10})\s*(?:功能|模块|系统|页面)/g);
+      if (featMatches && featMatches.length >= 2) {
+        ctx.feature = featMatches[0].replace(/\s+/g, '');
+        ctx.feature2 = featMatches[1].replace(/\s+/g, '');
+      } else if (featMatches && featMatches.length === 1) {
+        ctx.feature = featMatches[0].replace(/\s+/g, '');
+        ctx.feature2 = '数据统计与分析';
+      }
+
+      // Extract metrics
+      const metricMatch = jdText.match(/(?:提升|优化|改善|降低|提高)\s*(\S{2,6})\s*(?:率|度|量|值)/);
+      if (metricMatch) ctx.metric = metricMatch[0].replace(/\s+/g, '');
+
+      // Extract optimization keywords
+      const optMatch = jdText.match(/(?:性能优化|代码重构|架构升级|自动化|工程化|CI\/CD|DevOps|微服务|容器化|缓存|CDN|懒加载)/);
+      if (optMatch) ctx.optimization = optMatch[0];
+
+      // Extract volume / scale
+      const volMatch = jdText.match(/(\d+[万亿千百]?\s*(?:用户|日活|PV|UV|QPS|请求|数据|记录))/);
+      if (volMatch) ctx.volume = volMatch[1];
+
+      // Extract team size
+      const teamMatch = jdText.match(/(\d+)\s*(?:人|名)\s*(?:团队|小组)/);
+      if (teamMatch) ctx.teamSize = teamMatch[1];
+
+      // Extract deliverable
+      const delMatch = jdText.match(/(?:交付|上线|发布)\s*(\S{2,8})/);
+      if (delMatch) ctx.deliverable = delMatch[1];
+
+      // Extract project type
+      const projMatch = jdText.match(/(Web应用|移动端|小程序|H5|后台管理|数据平台|中台|SaaS|B端|C端|电商|金融|教育|医疗)/);
+      if (projMatch) ctx.projectType = projMatch[1];
+
+      return ctx;
+    }
+
+    function getRoleFromJd(jdText) {
+      const match = jdText.match(/(前端|后端|全栈|算法|数据|测试|运维|产品|设计|Android|iOS)\s*(开发)?\s*(工程师|实习生|经理|专员)/);
+      return match ? match[0].replace(/\s+/g, '') : '';
+    }
+
+    function pickRelevantSkills(candidateSkills, jdSkills, count) {
+      const matched = candidateSkills.filter(s => jdSkills.includes(s));
+      if (matched.length >= count) return matched.slice(0, count).join('、');
+      const remaining = candidateSkills.filter(s => !jdSkills.includes(s));
+      const combined = [...matched, ...remaining];
+      return combined.slice(0, Math.max(count, 1)).join('、') || '主流技术栈';
+    }
+
+    function analyzeStructure(resumeText, jdText) {
+      const issues = [];
+      const text = resumeText || '';
+
+      if (!text.match(/教育|学历|学校|大学|学院|毕业/)) issues.push('缺少教育背景板块');
+      if (!text.match(/技能|技术栈|掌握|熟悉|精通|了解/)) issues.push('缺少技能清单板块');
+      if (!text.match(/实习|工作|经历|经验/)) issues.push('缺少实习/工作经历板块');
+      if (!text.match(/项目/)) issues.push('缺少项目经历板块');
+
+      if (text.length < 100) issues.push('简历内容过短（不足100字），信息量不足');
+      if (text.length > 3000) issues.push('简历内容过长（超过3000字），建议精简至一页');
+
+      // Check for JD alignment
+      const jdSkills = extractJdContext(jdText).skills;
+      const matchedInResume = jdSkills.filter(s => text.toLowerCase().includes(s.toLowerCase()));
+      if (jdSkills.length > 0 && matchedInResume.length < jdSkills.length * 0.5) {
+        issues.push(`JD要求${jdSkills.length}项技能，简历中仅体现${matchedInResume.length}项，关键词覆盖率偏低`);
+      }
+
+      return issues;
+    }
+
+    function displayOptimizations(suggestions) {
+      const container = document.getElementById('optimizeCards');
+      container.innerHTML = suggestions.map((s, idx) => `
+        <div class="rounded-xl border border-slate-200 bg-white/70 p-5 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded">优化建议 ${idx + 1}</span>
+          </div>
+
+          <div>
+            <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">原简历片段</h5>
+            <div class="text-sm text-slate-600 bg-slate-50 rounded-lg p-3 whitespace-pre-line">${s.original}</div>
+          </div>
+
+          <div>
+            <h5 class="text-xs font-bold text-accent-600 uppercase tracking-wider mb-1">优化后</h5>
+            <div class="text-sm text-slate-700 bg-accent-50/50 rounded-lg p-3 whitespace-pre-line border border-accent-200">${s.optimized}</div>
+          </div>
+
+          <div>
+            <h5 class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">修改说明</h5>
+            <div class="text-sm text-slate-600 bg-amber-50/50 rounded-lg p-3">${s.note}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ============ Toast ============
+    function showToast(message, type = 'info') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+
+      const colors = {
+        success: 'bg-accent-500',
+        warning: 'bg-amber-500',
+        info: 'bg-primary-500'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast fixed bottom-6 left-1/2 -translate-x-1/2 z-50 ${colors[type]} text-white px-6 py-3 rounded-xl text-sm font-medium shadow-lg fade-in cursor-pointer`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
